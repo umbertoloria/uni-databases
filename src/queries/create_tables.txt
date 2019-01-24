@@ -1,0 +1,175 @@
+drop database if exists films;
+create database films;
+use films;
+
+drop table if exists utenti;
+drop table if exists generi;
+drop table if exists films;
+drop table if exists films_descrizioni;
+drop table if exists films_copertine;
+drop table if exists saghe_cinematografiche;
+drop table if exists saga_has_film;
+drop table if exists artisti;
+drop table if exists artisti_descrizioni;
+drop table if exists artisti_facce;
+drop table if exists recitazioni;
+drop table if exists regie;
+drop table if exists film_has_genere;
+drop table if exists visioni;
+drop table if exists software_houses;
+drop table if exists videogiochi;
+drop table if exists videogiochi_descrizioni;
+drop table if exists videogiochi_copertine;
+drop table if exists saghe_videoludiche;
+drop table if exists saga_has_videogioco;
+drop table if exists giocate;
+
+CREATE TABLE utenti (
+  id       int          NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  username varchar(50)  NOT NULL,
+  email    varchar(100) NOT NULL,
+  password varchar(40)  NOT NULL,
+  ruolo    enum ('Amministratore','Moderatore') DEFAULT NULL,
+  UNIQUE (username),
+  UNIQUE (email)
+);
+
+CREATE TABLE generi (
+  id   int         NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  nome varchar(50) NOT NULL,
+  UNIQUE KEY nome (nome)
+);
+
+CREATE TABLE films (
+  id     int          NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  titolo varchar(100) NOT NULL,
+  durata int          NOT NULL,
+  anno   year         NOT NULL
+);
+
+CREATE TABLE films_descrizioni (
+  film        int  NOT NULL PRIMARY KEY,
+  descrizione text NOT NULL,
+  FOREIGN KEY (film) REFERENCES films (id) ON UPDATE CASCADE
+);
+
+CREATE TABLE films_copertine (
+  film      int        NOT NULL PRIMARY KEY,
+  copertina mediumblob NOT NULL,
+  FOREIGN KEY (film) REFERENCES films (id) ON UPDATE CASCADE
+);
+
+CREATE TABLE saghe_cinematografiche (
+  id     int          NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  titolo varchar(100) NOT NULL
+);
+
+CREATE TABLE saga_has_film (
+  saga int NOT NULL,
+  film int NOT NULL,
+  PRIMARY KEY (saga, film),
+  FOREIGN KEY (saga) REFERENCES saghe_cinematografiche (id) ON UPDATE CASCADE,
+  FOREIGN KEY (film) REFERENCES films (id) ON UPDATE CASCADE
+);
+
+CREATE TABLE artisti (
+  id           int          NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  nome         varchar(100) NOT NULL,
+  data_nascita date         NOT NULL
+);
+
+CREATE TABLE artisti_descrizioni (
+  artista     int  NOT NULL PRIMARY KEY,
+  descrizione text NOT NULL,
+  FOREIGN KEY (artista) REFERENCES artisti (id) ON UPDATE CASCADE
+);
+
+CREATE TABLE artisti_facce (
+  artista int        NOT NULL PRIMARY KEY,
+  faccia  mediumblob NOT NULL,
+  FOREIGN KEY (artista) REFERENCES artisti (id) ON UPDATE CASCADE
+);
+
+CREATE TABLE recitazioni (
+  film        int          NOT NULL,
+  attore      int          NOT NULL,
+  personaggio varchar(100) NOT NULL,
+  PRIMARY KEY (film, attore),
+  FOREIGN KEY (film) REFERENCES films (id) ON UPDATE CASCADE,
+  FOREIGN KEY (attore) REFERENCES artisti (id) ON UPDATE CASCADE
+);
+
+CREATE TABLE regie (
+  film    int NOT NULL,
+  regista int NOT NULL,
+  PRIMARY KEY (film, regista),
+  FOREIGN KEY (film) REFERENCES films (id) ON UPDATE CASCADE,
+  FOREIGN KEY (regista) REFERENCES artisti (id) ON UPDATE CASCADE
+);
+
+CREATE TABLE film_has_genere (
+  film   int NOT NULL,
+  genere int NOT NULL,
+  PRIMARY KEY (film, genere),
+  FOREIGN KEY (film) REFERENCES films (id) ON UPDATE CASCADE,
+  FOREIGN KEY (genere) REFERENCES generi (id) ON UPDATE CASCADE
+);
+
+CREATE TABLE visioni (
+  utente  int      NOT NULL,
+  film    int      NOT NULL,
+  momento datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  voto    float             DEFAULT NULL,
+  PRIMARY KEY (utente, film),
+  FOREIGN KEY (utente) REFERENCES utenti (id) ON UPDATE CASCADE,
+  FOREIGN KEY (film) REFERENCES films (id) ON UPDATE CASCADE
+);
+
+CREATE TABLE software_houses (
+  id   int          NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  nome varchar(100) NOT NULL
+);
+
+CREATE TABLE videogiochi (
+  id             int          NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  titolo         varchar(100) NOT NULL,
+  anno           year         NOT NULL,
+  software_house int          NOT NULL,
+  INDEX (software_house),
+  FOREIGN KEY (software_house) REFERENCES software_houses (id) ON UPDATE CASCADE
+);
+
+CREATE TABLE videogiochi_descrizioni (
+  videogioco  int  NOT NULL PRIMARY KEY,
+  descrizione text NOT NULL,
+  FOREIGN KEY (videogioco) REFERENCES videogiochi (id) ON UPDATE CASCADE
+);
+
+CREATE TABLE videogiochi_copertine (
+  videogioco int NOT NULL PRIMARY KEY,
+  copertina  mediumblob,
+  FOREIGN KEY (videogioco) REFERENCES videogiochi (id) ON UPDATE CASCADE
+);
+
+CREATE TABLE saghe_videoludiche (
+  id     int          NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  titolo varchar(100) NOT NULL
+);
+
+CREATE TABLE saga_has_videogioco (
+  saga       int NOT NULL,
+  videogioco int NOT NULL,
+  PRIMARY KEY (saga, videogioco),
+  FOREIGN KEY (saga) REFERENCES saghe_videoludiche (id) ON UPDATE CASCADE,
+  FOREIGN KEY (videogioco) REFERENCES videogiochi (id) ON UPDATE CASCADE
+);
+
+CREATE TABLE giocate (
+  utente     int      NOT NULL,
+  videogioco int      NOT NULL,
+  momento    datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  voto       float             DEFAULT NULL,
+  PRIMARY KEY (utente, videogioco),
+  FOREIGN KEY (utente) REFERENCES utenti (id) ON UPDATE CASCADE,
+  FOREIGN KEY (videogioco) REFERENCES videogiochi (id) ON UPDATE CASCADE
+);

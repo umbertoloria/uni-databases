@@ -1,0 +1,130 @@
+# 1: Elencare i titoli di tutti i film in cui recita "Leonardo DiCaprio" dal più recente in poi.
+select films.titolo, films.anno
+from films
+       join recitazioni on films.id = recitazioni.film
+       join artisti on recitazioni.attore = artisti.id
+where artisti.nome = "Leonardo DiCaprio"
+order by films.anno desc;
+
+# 2: Elencare i film che sono stati pubblicati nel 2018 in ordine di durata (dal più breve al più duraturo).
+select titolo, durata
+from films
+where anno = 2018
+order by durata;
+
+# 3: Elencare i titoli di tutti i videogiochi in ordine di pubblicazione a cui l'utente "umbertolo" non ha ancora giocato.
+select videogiochi.titolo
+from videogiochi
+       join giocate on videogiochi.id = giocate.videogioco
+       join utenti on giocate.utente = utenti.id
+where utenti.username = 'umbertolo'
+  and giocate.voto IS NULL
+order by videogiochi.anno;
+
+# 4: Elencare tutti gli artisti (attori e registi) che hanno lavorato nei film che ha visto l'utente "umbertolo" in ordine alfabetico.
+(select nome
+ from artisti
+        join recitazioni on artisti.id = recitazioni.attore
+        join films on recitazioni.film = films.id
+        join visioni on films.id = visioni.film
+        join utenti on visioni.utente = utenti.id
+ where username = 'umbertolo'
+   and voto IS NOT NULL)
+union
+(select nome
+ from artisti
+        join regie on artisti.id = regie.regista
+        join films on regie.film = films.id
+        join visioni on films.id = visioni.film
+        join utenti on visioni.utente = utenti.id
+ where username = 'umbertolo'
+   and voto IS NOT NULL)
+order by nome;
+
+# 5: Elencare tutti gli attori che hanno recitato nel film "Shutter Island" ma non nel film "Prova a prendermi".
+select artisti.nome
+from artisti
+       join recitazioni on artisti.id = recitazioni.attore
+       join films on recitazioni.film = films.id
+where films.titolo = 'Shutter Island'
+  and artisti.id not in (
+  select recitazioni.attore
+  from recitazioni
+         join films on recitazioni.film = films.id
+  where films.titolo = 'Prova a prendermi'
+);
+
+# 6: Elencare i film in cui uno degli attori è anche un regista.
+select distinct films.titolo
+from films
+       join recitazioni on films.id = recitazioni.film
+where recitazioni.attore in (
+  select regista
+  from regie
+  where regie.film = films.id
+)
+order by titolo;
+
+# 7: Calcolare il numero di film in cui "Brad Pitt" ha recitato.
+select count(*) as numero_film
+from artisti
+       join recitazioni on artisti.id = recitazioni.attore
+where nome = "Brad Pitt";
+
+# 8: Calcolare il numero di film di cui "Steven Spielberg" ha curato la regia.
+select count(*) as numero_film
+from artisti
+       join regie on artisti.id = regie.regista
+where nome = "Steven Spielberg";
+
+# 9: Elencare i film in cui hanno recitato almeno 2 attori.
+select films.titolo, count(*) numero_attori
+from films
+       join recitazioni on films.id = recitazioni.film
+group by films.id
+having numero_attori >= 2
+order by numero_attori desc;
+
+# 10: Elencare il numero di film di ogni genere a cui un attore ha partecipato.
+select artisti.nome, generi.nome, count(*) numero
+from artisti
+       join recitazioni on artisti.id = recitazioni.attore
+       join film_has_genere on recitazioni.film = film_has_genere.film
+       join generi on film_has_genere.genere = generi.id
+group by artisti.id, generi.id
+order by artisti.nome, numero desc;
+
+# 11: Determinare l'attore che ha recitato in più film diretti da "Bryan Singer".
+create or replace view attori_con_regista as
+select attori.nome, count(*) numero_film
+from artisti as attori
+       join recitazioni on attori.id = recitazioni.attore
+       join regie on recitazioni.film = regie.film
+       join artisti as registi on regie.regista = registi.id
+where registi.nome = "Bryan Singer"
+group by attori.id
+order by attori.nome;
+
+select *
+from attori_con_regista
+where numero_film = (
+  select max(numero_film)
+  from attori_con_regista
+);
+
+drop view attori_con_regista;
+
+# 12: Elencare gli utenti che hanno giocato a tutti i videogiochi.
+select username
+from utenti
+where not exists(
+    select *
+    from videogiochi
+    where not exists(
+        select *
+        from giocate
+        where utente = utenti.id
+          and videogioco = videogiochi.id
+          and voto is not null
+      )
+  );
